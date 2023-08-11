@@ -8,7 +8,7 @@ def cmtf4si(corrupt_img, y=None, c_m=None, r=10, omega=None, alpha=1, tol=1e-4, 
     """
     CMTF Compute a Coupled Matrix and Tensor Factorization (and recover the Tensor).
     ---------
-    :param   'corrupt_img'  - Tensor
+    :param   'corrupt_img'  - The corrupted input tensor.
     :param   'y'  - Coupled Matries
     :param  'c_m' - Coupled Modes
     :param   'r'  - Tensor Rank
@@ -130,18 +130,18 @@ def cmtf(corrupt_img, y=None, c_m=None, r=20, omega=None, tol=1e-4, maxiter=800,
     """
     CMTF Compute a Coupled Matrix and Tensor Factorization (and recover the Tensor).
     ---------
-    :param   'corrupt_img'  - Tensor
-    :param   'y'  - Coupled Matrices
-    :param  'c_m' - Coupled Modes
-    :param   'r'  - Tensor Rank
-    :param  'omega'- Index Tensor of Observed Entries (mask)
-    :param  'tol' - Tolerance on difference in fit {1.0e-4}
-    :param 'maxiters' - Maximum number of iterations {50}
-    :param 'init' - Initial guess [{'random'}|'nvecs'|cell array]
-    :param 'printitn' - Print fit every n iterations; 0 for no printing {1}
+    :param corrupt_img : Tensor
+    :param y : Coupled Matrices
+    :param c_m : Coupled Modes
+    :param   r : Tensor Rank
+    :param  omega : Index Tensor of Observed Entries (mask)
+    :param  tol : Tolerance on difference in fit {1.0e-4}
+    :param maxiters : Maximum number of iterations {50}
+    :param init : Initial guess [{'random'}|'nvecs'|cell array]
+    :param printitn : Print fit every n iterations; 0 for no printing {1}
     ---------
     :return
-     P: Decompose result.(kensor)
+     P: Decompose result(Tensor)
      x: Recovered Tensor.
     #  V: Projection Matrix.
     ---------
@@ -263,17 +263,17 @@ def cmtf(corrupt_img, y=None, c_m=None, r=20, omega=None, tol=1e-4, maxiter=800,
 def cp_als(y, r=12, omega=None, tol=1e-4, maxiter=800, init='random', printitn=500, original_img = None):
     """ CP_ALS Compute a CP decomposition of a Tensor (and recover it).
     ---------
-     :param  'y' - Tensor with Missing data
-     :param  'r' - Rank of the tensor
-     :param 'omega' - Missing data Index Tensor
-     :param 'tol' - Tolerance on difference in fit
-     :param 'maxiters' - Maximum number of iterations
-     :param 'init' - Initial guess ['random'|'nvecs'|'eigs']
-     :param 'printitn' - Print fit every n iterations; 0 for no printing
+     :param  'y' : Tensor with Missing data
+     :param  'r' : Rank of the tensor
+     :param 'omega' : Missing data Index Tensor
+     :param 'tol' : Tolerance on difference in fit
+     :param 'maxiters' : Maximum number of iterations
+     :param 'init' : Initial guess ['random'|'nvecs'|'eigs']
+     :param 'printitn' : Print fit every n iterations; 0 for no printing
     ---------
      :return
-        'P' - Decompose result.(kensor)
-        'X' - Recovered Tensor.
+        'P' : Decompose result.(kensor)
+        'X' : Recovered Tensor.
     ---------
     """
     print('cp_als:')
@@ -367,19 +367,48 @@ def cp_als(y, r=12, omega=None, tol=1e-4, maxiter=800, init='random', printitn=5
 
     return P, X
 
+
 def siLRTC(corrupt_imgorig, mask2D, a, b, K):
+    """
+        Simple Low-Rank Tensor Completion (siLRTC) algorithm.
+
+
+        :param  corrupt_imgorig (ndarray): The corrupted input tensor/image.
+        :param  mask2D (ndarray): Binary mask indicating missing entries in the tensor.
+        :param  a (list or ndarray): List of regularization parameters for each mode.
+        :param  b (list or ndarray): List of scaling factors for each mode.
+        :param  K (int): Number of iterations for the algorithm.
+
+        :return
+        ndarray: The completed tensor after running the siLRTC algorithm.
+    """
+
     print('SiLRTC:')
+    # Convert the mask to a boolean array
     bool_omeg = np.array(mask2D, dtype=bool)
 
+    # Deep copy the input tensor to avoid modifying the original data
     corrupt_img = copy.deepcopy(corrupt_imgorig)
     orig = copy.deepcopy(corrupt_imgorig)
+
+    # Get the dimensions of the input tensor
     imSize = corrupt_img.shape
+
+    # Main algorithm loop
     for _ in range(K):
         print(_, end=" ")
+
+        # Initialize an array to accumulate results for each mode
         M = np.zeros(imSize)
+
+        # Iterate over each mode of the tensor
         for j in range(3):
+            # Unfold the tensor along the current mode
             unf = b[j]*shrinkage(tl.base.unfold(corrupt_img, j),a[j]/b[j])
+            # Fold the updated unfolded tensor back to its original shape and add to M
             M = M + tl.fold(unf, j, imSize)
+
+        # Normalize M by sum of scaling factors
         M/=sum(b)
 
         # Update indices that we know from Image into M and set corrupt_img equal to M
@@ -387,99 +416,159 @@ def siLRTC(corrupt_imgorig, mask2D, a, b, K):
         corrupt_img = M
     return corrupt_img
 
+
 def haLRTC(corrupt_imgorig, mask2D, a, b, K):
 
+    """
+    Perform High-accuracy Low-Rank Tensor Completion (HaLRTC) algorithm.
+    ---------
+    
+    Parameters:
+    :param corrupt_imgorig (ndarray): The corrupted input tensor/image.
+    :param mask2D (ndarray): Binary mask indicating missing entries in the tensor.
+    :param a (list or ndarray):  regularization parameters for each mode.
+    :param b (float): regularization parameter to control shrinkage.
+    :param K (int): Number of iterations for the algorithm.
+
+    :returns
+    ndarray: The completed tensor after running the HaLRTC algorithm.
+    """
+    
+    # Deep copy the input tensor to avoid modifying the original data
     corrupt_img = copy.deepcopy(corrupt_imgorig)
     orig = copy.deepcopy(corrupt_imgorig)
     print('HaLRTC:')
+
+    # Convert the mask to a boolean array
     bool_omeg = np.array(mask2D, dtype=bool)
     p = 1e-6
+
+    # Get the dimensions of the input tensor
+    imSize = corrupt_img.shape
     imSize = corrupt_img.shape
     ArrSize = np.array(imSize)
     ArrSize = np.append(ArrSize, 3) # array of Mi / Yi
+
+    # Initialize arrays to store intermediate results
     Mi = np.zeros(ArrSize)
     Yi = np.zeros(ArrSize)
-
+    
+    # Main algorithm loop
     for _ in range(K):
         print(_, end=" ")
+
+        # Iterate over each mode of the tensor
         for i in range(ArrSize[3]):
+            
+            # Unfold the tensor along the current mode
             elem = tl.unfold(corrupt_img, i)
+            
+            # Update elem using the unfolded tensor from Yi divided by p
             elem = np.add(elem,tl.unfold(np.squeeze(Yi[:, :, :, i]), i) / p,out = elem, casting="unsafe")
+             
+            # Apply shrinkage operation to elem using regularization parameter a[i] / p
             elem = shrinkage(elem, a[i] / p)
+            
+            # Fold the updated elem tensor back to its original shape and store in Mi
             Mi[:,:,:,i] = tl.fold(elem, i, imSize)
+
         
+        # Update the current tensor using the average of Mi and Yi divided by p
         corrupt_img = (1/ArrSize[3]) * np.sum(Mi - Yi/p, ArrSize[3])
+        
+        # Restore the original values in the tensor's missing entries indicated by bool_omeg
         corrupt_img[bool_omeg] = orig[bool_omeg]
 
+        # Update Yi using the difference between Mi and the updated tensor
         for i in range(ArrSize[3]):
             Yi[:, :, :, i] = Yi[:, :, :, i] - p * (Mi[:, :, :, i] - corrupt_img)
         
+        # Update the parameter p
         p = 1.2 * p
 
-
+    # Return the completed tensor after K iterations
     return corrupt_img
 
-# def faLRTC(corrupt_imgorig, mask2D, a, b, K, img):
-#     print('FaLRTC:')
-#     corrupt_img = copy.deepcopy(corrupt_imgorig)
-#     imSize = corrupt_img.shape
-#     C = 0.5
-#     u = 10^5
-#     ui = a/u
-#     Z = copy.deepcopy(corrupt_img)
-#     W = copy.deepcopy(corrupt_img)
-#     B = 0
-#     L = np.sum(ui)
-#     for _ in range(K):
-#         print(_, end=" ")
-#         while True:
-#             theta = (1 + np.sqrt(1 + 4 * L * B)) / (2 * L)
-#             thetabyL = theta/L
-#             W = thetabyL/(B + thetabyL) * Z + B/(B+thetabyL) * corrupt_img
 
-#             dfw = np.zeros(imSize)
-#             fx = 0
-#             fw = 0
+def faLRTC(corrupt_imgorig, mask2D, a, b, K, img):
+    """
+    Fast Low-Rank Tensor Completion (FaLRTC) algorithm.
 
-#             for i in range(3):
-#                 Sig, T = Trimming(tl.unfold(corrupt_img,i), ui[i]/a[i])
-#                 fx += np.sum(Sig)
-#                 Sig, T = Trimming(tl.unfold(W,i), ui[i]/a[i])
-#                 fw += np.sum(Sig)
-#                 dfw += tl.fold(a[i]**2/ui[i]*T, i, imSize)
+    :param corrupt_imgorig  (ndarray): The corrupted input tensor.
+    :param mask2D (ndarray): Binary mask indicating missing entries in the tensor.
+    :param a (list or ndarray): List of regularization parameters for each mode.
+    :param b (list or ndarray): Not used in the provided code snippet.
+    :param K (int): Number of iterations for the algorithm.
+    :param (ndarray): Not used in the provided code snippet.
+    :return:
+        ndarray: The completed tensor after running the FaLRTC algorithm.
+    """
+    print('FaLRTC:')
+    # Deep copy the input tensor to avoid modifying the original data
+    corrupt_img = copy.deepcopy(corrupt_imgorig)
+    imSize = corrupt_img.shape
+
+    # Declaring Constants
+    C = 0.5
+    u = 10^5
+    ui = a/u
+    Z = copy.deepcopy(corrupt_img)
+    W = copy.deepcopy(corrupt_img)
+    B = 0
+    L = np.sum(ui)
+
+    # Main algorithm loop
+    for _ in range(K):
+        print(_, end=" ")
+        # Inner loop for optimization
+        while True:
+            theta = (1 + np.sqrt(1 + 4 * L * B)) / (2 * L)
+            thetabyL = theta/L
+            W = thetabyL/(B + thetabyL) * Z + B/(B+thetabyL) * corrupt_img
+
+            dfw = np.zeros(imSize)
+            fx = 0
+            fw = 0
+
+            for i in range(3):
+                Sig, T = Trimming(tl.unfold(corrupt_img,i), ui[i]/a[i])
+                fx += np.sum(Sig)
+                Sig, T = Trimming(tl.unfold(W,i), ui[i]/a[i])
+                fw += np.sum(Sig)
+                dfw += tl.fold(a[i]**2/ui[i]*T, i, imSize)
             
-#             # print(dfw.shape)
-#             dfw = np.array(np.gradient(dfw, axis = 0))
-#             # print(dfw.shape)
+            # print(dfw.shape)
+            dfw = np.array(np.gradient(dfw, axis = 0))
+            # print(dfw.shape)
             
-#             # print(fx)
-#             # print(fw - np.sum(dfw**2)/L)
-#             if fx <= fw - np.sum(dfw**2)/(2*L):
-#                 # print('break1')
-#                 break
+            # print(fx)
+            # print(fw - np.sum(dfw**2)/L)
+            if fx <= fw - np.sum(dfw**2)/(2*L):
+                # print('break1')
+                break
 
-#             Xp = W - dfw/L
-#             fxp = 0
-#             for i in range(3):
-#                 Sig, T = Trimming(tl.unfold(Xp,i), ui[i]/a[i])
-#                 fxp += np.sum(Sig)
+            Xp = W - dfw/L
+            fxp = 0
+            for i in range(3):
+                Sig, T = Trimming(tl.unfold(Xp,i), ui[i]/a[i])
+                fxp += np.sum(Sig)
             
-#             # print(fxp)
-#             # print(fw - np.sum(dfw**2)/(2*L))
-#             if fxp-20 <= fw - np.sum(dfw**2)/(2*L):
-#                 corrupt_img[mask2D] = Xp[mask2D]
-#                 # print('break2')
-#                 break
+            # print(fxp)
+            # print(fw - np.sum(dfw**2)/(2*L))
+            if fxp-20 <= fw - np.sum(dfw**2)/(2*L):
+                corrupt_img[mask2D] = Xp[mask2D]
+                # print('break2')
+                break
             
-#             L = L/C
+            L = L/C
 
-#             # print(L)
-#             if L > 1e10:
-#                 print("L too large, ending function..")
-#                 return corrupt_img
+            # print(L)
+            if L > 1e10:
+                print("L too large, ending function..")
+                return corrupt_img
 
-#         Z = np.subtract(Z,thetabyL*dfw, out = Z, casting="unsafe") #check uint8/float64 issue
-#         B += thetabyL
+        Z = np.subtract(Z,thetabyL*dfw, out = Z, casting="unsafe") #check uint8/float64 issue
+        B += thetabyL
 
-
-#     return corrupt_img
+    # Return the completed tensor after K iterations
+    return corrupt_img
