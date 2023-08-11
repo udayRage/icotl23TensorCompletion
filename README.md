@@ -14,3 +14,6 @@ One of the key benefits of raster imputation is its ability to preserve spatial 
 - Coupled Matrix and Tensor Factorization Optimization (CMTF OPT)
 - Coupled Matrix and Tensor factorization Optimization For Satellite Images (CMTF4SI) 
 
+### This work is done by EDULA Raashika at the University of Aizu under the supervision of Prof.RAGE Uday Kiran for the fulfillment of the requirements for the Master's Thesis. 
+
+
