@@ -1,1 +1,16 @@
 # rasterImputation
+
+## Introduction 
+Raster Imputation: Enhancing Data Completeness and Quality by prediction of missing pixels in raster images using Tensor-Based Imputation Techniques 
+
+Imputation is a powerful technique used to enhance the completeness and quality of raster data by predicting and filling missing or corrupted pixel values. Raster data, often represented as gridded matrices of pixels, are prevalent in various fields such as remote sensing, geographic information systems (GIS), and image analysis. However, real-world raster datasets frequently contain gaps or areas with corrupted or unobserved values due to sensor limitations, data acquisition issues, or other factors. Raster imputation provides a solution to address these data gaps and improve the usability of such datasets.
+
+One of the key benefits of raster imputation is its ability to preserve spatial and contextual integrity during the data enhancement process. Algorithms consider not only the pixel values themselves but also their spatial relationships, allowing for accurate reconstruction of missing values while respecting the overall structure of the dataset. This is especially valuable in applications like land cover classification, environmental monitoring, and terrain analysis, where preserving spatial coherence is crucial.
+
+## Algorithms 
+- Simple Low-Rank Tensor Completion (siLRTC)
+- High-accuracy Low-Rank Tensor Completion (HaLRTC)
+- Canonical Polyadic-Alternating Least Squares (CP-ALS)
+- Coupled Matrix and Tensor Factorization Optimization (CMTF OPT)
+- Coupled Matrix and Tensor factorization Optimization For Satellite Images (CMTF4SI) 
+
